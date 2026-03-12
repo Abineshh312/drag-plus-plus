@@ -4,7 +4,7 @@ DRAG++ Student Model wrapper.
 
 Design goals:
 - Run on Google Colab Free (T4, ~15GB VRAM)
-- Prefer Qwen3.5-2B (your choice), fall back automatically if it fails
+- Prefer Llama3.2 (excellent performance + local Ollama support), fall back automatically if it fails
 - Support 4-bit QLoRA-friendly loading (NF4) for training/inference efficiency
 
 Note: Training code (LoRA/QLoRA) lives in scripts/train.py and notebooks.
@@ -34,12 +34,13 @@ class StudentModel:
 
     # Ordered by preference (we will try these in order when model_name="auto")
     DEFAULT_CANDIDATES: Sequence[StudentLoadSpec] = (
-        # Preferred for Colab free tier: strong but still feasible with 4-bit QLoRA
+        # Preferred: Llama3.2 (excellent performance, local Ollama support)
+        StudentLoadSpec("llama3.2-1b", "meta-llama/Llama-3.2-1B-Instruct"),
+        StudentLoadSpec("llama3.2-3b", "meta-llama/Llama-3.2-3B-Instruct"),
+        # Fallback: Qwen models
         StudentLoadSpec("qwen3.5-1.5b", "Qwen/Qwen3.5-1.5B-Instruct"),
         StudentLoadSpec("qwen3.5-2b", "Qwen/Qwen3.5-2B-Instruct"),
-        # Proven-available fallbacks
         StudentLoadSpec("qwen2.5-1.5b", "Qwen/Qwen2.5-1.5B-Instruct"),
-        StudentLoadSpec("qwen2.5-0.5b", "Qwen/Qwen2.5-0.5B-Instruct"),
     )
 
     def __init__(
@@ -53,7 +54,7 @@ class StudentModel:
         """Initialize and load a student model.
 
         Args:
-            model_name: "auto" (recommended) or a key like "qwen3.5-2b".
+            model_name: "auto" (recommended), "llama3.2-3b", or a key like "qwen3.5-2b".
             device: "cuda" or "cpu". Auto-detected if None.
             quantization: Prefer "4bit" for Colab Free. Use "none" for CPU.
             torch_dtype: dtype override. Defaults: fp16 on cuda, fp32 on cpu.
